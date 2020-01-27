@@ -1,0 +1,19 @@
+{
+  "name": "grades",
+  "version": "1.0.0",
+  "description": "WhatsApp bot for retrieving grades.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KyKri/SanDStone-Grades.git"
+  },
+  "author": "kkrick@sandstoneinitiative.org",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KyKri/SanDStone-Grades/issues"
+  },
+  "homepage": "https://github.com/KyKri/SanDStone-Grades#readme"
+}
