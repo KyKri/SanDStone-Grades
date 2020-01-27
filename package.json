@@ -15,5 +15,9 @@
   "bugs": {
     "url": "https://github.com/KyKri/SanDStone-Grades/issues"
   },
-  "homepage": "https://github.com/KyKri/SanDStone-Grades#readme"
+  "homepage": "https://github.com/KyKri/SanDStone-Grades#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "twilio": "^3.39.3"
+  }
 }
