@@ -10,6 +10,13 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.post('/sms', (req, res) => {
     const twiml = new MessagingResponse();
 
+    if (req.body.Body === null || req.body.Body === undefined) {
+        res.writeHead(400);
+        res.write("Body must include a message.");
+        res.end();
+        return;
+    }
+
     let words = req.body.Body.split(' ');
     let firstWord = words[0];
     let secondWord = words[1];
