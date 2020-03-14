@@ -12,9 +12,9 @@ INSERT INTO parents (whatsapp, firstname, lastname) VALUES ('15551234569', 'Zexi
 
 -- grade_authorizations
 INSERT INTO grade_authorizations (whatsapp, student) VALUES ('15551234567', 1);
-INSERT INTO grade_authorizations (whatsapp, student) VALUES ('15551237654', 1);
-INSERT INTO grade_authorizations (whatsapp, student) VALUES ('15551234569', 1);
-INSERT INTO grade_authorizations (whatsapp, student) VALUES ('15557654321', 1);
+INSERT INTO grade_authorizations (whatsapp, student) VALUES ('15551237654', 2);
+INSERT INTO grade_authorizations (whatsapp, student) VALUES ('15551234569', 3);
+INSERT INTO grade_authorizations (whatsapp, student) VALUES ('15557654321', 4);
 
 -- teachers
 INSERT INTO teachers (firstname, lastname) VALUES ('Alan', 'Riggins');
