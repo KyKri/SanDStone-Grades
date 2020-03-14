@@ -11,7 +11,7 @@ CREATE TABLE `parents` (
 );
 
 CREATE TABLE `grade_authorizations` (
-  `whatasapp` int,
+  `whatsapp` varchar(255),
   `student` int
 );
 
