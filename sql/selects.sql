@@ -1,0 +1,9 @@
+-- SELECT * FROM students;
+-- SELECT * FROM parents;
+-- SELECT * FROM grade_authorizations;
+-- SELECT * FROM teachers;
+-- SELECT * FROM classes;
+-- SELECT * FROM class_enrollments;
+-- SELECT * FROM subjects;
+-- SELECT * FROM assignments;
+-- SELECT * FROM grades;
