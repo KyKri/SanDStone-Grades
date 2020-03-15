@@ -1,3 +1,4 @@
 node_modules/
 info.txt
 *.xlsx
+config.json
