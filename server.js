@@ -8,6 +8,7 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.post('/sms', (req, res) => {
+    console.log("Received post request to /sms.");
     const twiml = new MessagingResponse();
 
     if (req.body.Body === null || req.body.Body === undefined) {
@@ -33,7 +34,7 @@ app.post('/sms', (req, res) => {
 
     let whatsappId = req.body.From;
 
-    // MAke sure the whatsappId is not null or empty
+    // Make sure the whatsappId is not null or empty
     if (whatsappId == null || whatsappId == undefined || whatsappId == "") {
         console.log("whatsappId is null, unable to check grades.");
         res.writeHead(400);
