@@ -2,8 +2,11 @@ const http = require('http');
 const express = require('express');
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
 const bodyParser = require('body-parser');
-
+const mysql = require('mysql');
+const config = require('./config.json');
 const app = express();
+
+var con = mysql.createConnection(config.connection);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -45,9 +48,32 @@ app.post('/sms', (req, res) => {
 
     whatsappId = whatsappId.substring(9);
 
+    connectionTest();
+
     res.writeHead(200, { 'Content-Type': 'text/xml' });
     res.end(twiml.toString());
 });
+
+function connectionTest() {
+    con.connect((err)=> {
+        if (err) {
+            throw err;
+        }
+        console.log("Connected to the MySQL DB!");
+        con.query('SELECT * FROM students;', (err, result) => {
+            if (err) {
+                throw err;
+            }
+            console.log(result[0].id, result[0].firstname, result[0].lastname);
+        });
+    
+        con.end( (err) => {
+            if (err)
+                throw err;
+            console.log("Connection closed");
+        });
+    });
+}
 
 var port = process.env.PORT || '3000';
 
