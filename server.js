@@ -31,6 +31,19 @@ app.post('/sms', (req, res) => {
         twiml.message('Checking ' + secondWord + ' grades for ' + firstWord);
     }
 
+    let whatsappId = req.body.From;
+
+    // MAke sure the whatsappId is not null or empty
+    if (whatsappId == null || whatsappId == undefined || whatsappId == "") {
+        console.log("whatsappId is null, unable to check grades.");
+        res.writeHead(400);
+        res.write("Whatsapp ID is null. Whatsapp ID must be included to check grades.");
+        res.end();
+        return;
+    }
+
+    whatsappId = whatsappId.substring(9);
+
     res.writeHead(200, { 'Content-Type': 'text/xml' });
     res.end(twiml.toString());
 });
