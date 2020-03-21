@@ -6,8 +6,6 @@ const mysql = require('mysql');
 const config = require('./config.json');
 const app = express();
 
-var con = mysql.createConnection(config.connection);
-
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.post('/sms', (req, res) => {
@@ -27,14 +25,13 @@ app.post('/sms', (req, res) => {
     let thirdWord = words[2];
 
     // Make sure that that the message is of the form "[id] [current/recent] grades"
-    if (isNaN(firstWord) || !(secondWord === "recent" || secondWord ===  "current") || thirdWord !== "grades") {
+    if (isNaN(firstWord) || !(secondWord === "recent" || secondWord === "current") || thirdWord !== "grades") {
         twiml.message('Please send a messaging beginning with a student id number'
             + ' immediately followed by either "recent grades" or "current grades".'
             + ' For example:\n123456 recent grades');
-    } else {
-        twiml.message('Checking ' + secondWord + ' grades for ' + firstWord);
     }
 
+    let studentId = firstWord;
     let whatsappId = req.body.From;
 
     // Make sure the whatsappId is not null or empty
@@ -48,14 +45,59 @@ app.post('/sms', (req, res) => {
 
     whatsappId = whatsappId.substring(9);
 
-    connectionTest();
+    let authorized = isAuthorized(whatsappId, studentId);
+
+    if (authorized === true) {
+        twiml.message("You are authorized to check grades for student id: " + studentId + ".\nChecking grades.");
+    }
+    else {
+        twiml.message("Either you are not authorized to check that student id or we do not have a student by that id.");
+    }
 
     res.writeHead(200, { 'Content-Type': 'text/xml' });
     res.end(twiml.toString());
 });
 
+async function isAuthorized(whatsappId, studentId) {
+    console.log("Checking Authorizations for " + whatsappId);
+
+    var con = mysql.createConnection(config.connection);
+    var authorized = false;
+
+    con.connect((err) => {
+        if (err) {
+            throw err;
+        }
+
+        console.log("DB connection opened.");
+
+        con.query(`SELECT whatsapp 
+                    FROM grade_authorizations
+                    WHERE whatsapp = ${whatsappId}
+                    AND student = ${studentId};`,
+            (err, result) => {
+                if (err) {
+                    throw err;
+                }
+                console.log(result.length);
+                if (result.length > 0) {
+                    authorized = true;
+                }
+                con.end((err) => {
+                    if (err)
+                        throw err;
+                    console.log("DB connection closed.");
+                    console.log("Authorized is: " + authorized);
+                    return authorized;
+                });
+            });
+    });
+}
+
 function connectionTest() {
-    con.connect((err)=> {
+    var con = mysql.createConnection(config.connection);
+
+    con.connect((err) => {
         if (err) {
             throw err;
         }
@@ -66,8 +108,8 @@ function connectionTest() {
             }
             console.log(result[0].id, result[0].firstname, result[0].lastname);
         });
-    
-        con.end( (err) => {
+
+        con.end((err) => {
             if (err)
                 throw err;
             console.log("Connection closed");
