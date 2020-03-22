@@ -50,16 +50,13 @@ app.post('/sms', (req, res) => {
 
     let authorized = false;
 
-    isAuthorized(whatsappId, studentId).then((auth) => {
-        authorized = auth;
-
-        console.log("In /sms, authorized is: " + authorized);
-
-        if (authorized === true) {
-            twiml.message("You are authorized to check grades for student id: " + studentId + ".\nChecking grades.");
-        }
-        else {
-            twiml.message("Either you are not authorized to check that student id or we do not have a student by that id.");
+    isAuthorized(whatsappId, studentId).then((authorization) => {
+        if (authorization.err) {
+            twiml.message(authorization.msg);
+        } else if (authorization.auth === true) {
+            twiml.message(authorization.msg);
+        } else {
+            twiml.message(authorization.msg);
         }
 
         res.writeHead(200, { 'Content-Type': 'text/xml' });
@@ -70,8 +67,20 @@ app.post('/sms', (req, res) => {
 async function isAuthorized(whatsappId, studentId) {
     console.log("Checking Authorizations for " + whatsappId);
 
-    var con = await mysql.createConnection(config.connection);
-    var authorized = false;
+    var authorization = {
+        auth: false,
+        err: false,
+        msg: "Either you are not authorized to check that student id or we do not have a student by that id."
+    };
+
+    try {
+        var con = await mysql.createConnection(config.connection);
+    } catch (err) {
+        console.log("Error connecting to DB:\n" + err);
+        authorization.err = true;
+        authorization.msg = "Sorry, we had some trouble on our end. Please try again later. Error #66.";
+        return authorization;
+    }
 
     try {
         const [rows, fields] = await con.execute(
@@ -82,13 +91,16 @@ async function isAuthorized(whatsappId, studentId) {
         );
         if (rows.length > 0) {
             if (rows[0].whatsapp === whatsappId && rows[0].student === studentId) {
-                authorized = true;
+                authorization.auth = true;
+                authorization.msg = "You are authorized to check grades for student id " + studentId + ".\nChecking grades.";
             }
         }
     } catch (err) {
-        console.log(err);
+        console.log("Error querying DB:\n" + err);
+        authorization.err = true;
+        authorization.msg = "Sorry, we had some trouble on our end. Please try again later. Error #67."
     } finally {
-        return authorized;
+        return authorization;
     }
 }
 
