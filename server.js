@@ -2,7 +2,7 @@ const http = require('http');
 const express = require('express');
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
 const bodyParser = require('body-parser');
-const mysql = require('mysql');
+const mysql = require('mysql2/promise');
 const config = require('./config.json');
 const app = express();
 
@@ -31,7 +31,7 @@ app.post('/sms', (req, res) => {
             + ' For example:\n123456 recent grades');
     }
 
-    let studentId = firstWord;
+    let studentId = parseInt(firstWord);
     let whatsappId = req.body.From;
 
     // Make sure the whatsappId is not null or empty
@@ -45,76 +45,48 @@ app.post('/sms', (req, res) => {
 
     whatsappId = whatsappId.substring(9);
 
-    let authorized = isAuthorized(whatsappId, studentId);
+    let authorized = false;
 
-    if (authorized === true) {
-        twiml.message("You are authorized to check grades for student id: " + studentId + ".\nChecking grades.");
-    }
-    else {
-        twiml.message("Either you are not authorized to check that student id or we do not have a student by that id.");
-    }
+    isAuthorized(whatsappId, studentId).then((auth) => {
+        authorized = auth;
 
-    res.writeHead(200, { 'Content-Type': 'text/xml' });
-    res.end(twiml.toString());
+        console.log("In /sms, authorized is: " + authorized);
+
+        if (authorized === true) {
+            twiml.message("You are authorized to check grades for student id: " + studentId + ".\nChecking grades.");
+        }
+        else {
+            twiml.message("Either you are not authorized to check that student id or we do not have a student by that id.");
+        }
+
+        res.writeHead(200, { 'Content-Type': 'text/xml' });
+        res.end(twiml.toString());
+    });
 });
 
 async function isAuthorized(whatsappId, studentId) {
     console.log("Checking Authorizations for " + whatsappId);
 
-    var con = mysql.createConnection(config.connection);
+    var con = await mysql.createConnection(config.connection);
     var authorized = false;
 
-    con.connect((err) => {
-        if (err) {
-            throw err;
-        }
-
-        console.log("DB connection opened.");
-
-        con.query(`SELECT whatsapp 
-                    FROM grade_authorizations
-                    WHERE whatsapp = ${whatsappId}
-                    AND student = ${studentId};`,
-            (err, result) => {
-                if (err) {
-                    throw err;
-                }
-                console.log(result.length);
-                if (result.length > 0) {
-                    authorized = true;
-                }
-                con.end((err) => {
-                    if (err)
-                        throw err;
-                    console.log("DB connection closed.");
-                    console.log("Authorized is: " + authorized);
-                    return authorized;
-                });
-            });
-    });
-}
-
-function connectionTest() {
-    var con = mysql.createConnection(config.connection);
-
-    con.connect((err) => {
-        if (err) {
-            throw err;
-        }
-        console.log("Connected to the MySQL DB!");
-        con.query('SELECT * FROM students;', (err, result) => {
-            if (err) {
-                throw err;
+    try {
+        const [rows, fields] = await con.execute(
+            `SELECT whatsapp, student  
+            FROM grade_authorizations
+            WHERE whatsapp = ${whatsappId}
+            AND student = ${studentId};`
+        );
+        if (rows.length > 0) {
+            if (rows[0].whatsapp === whatsappId && rows[0].student === studentId) {
+                authorized = true;
             }
-            console.log(result[0].id, result[0].firstname, result[0].lastname);
-        });
-
-        con.end((err) => {
-            if (err)
-                throw err;
-            console.log("Connection closed");
-        });
-    });
+        }
+    } catch (err) {
+        console.log(err);
+    } finally {
+        return authorized;
+    }
 }
 
 var port = process.env.PORT || '3000';
