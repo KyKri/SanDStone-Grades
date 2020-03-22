@@ -25,10 +25,13 @@ app.post('/sms', (req, res) => {
     let thirdWord = words[2];
 
     // Make sure that that the message is of the form "[id] [current/recent] grades"
-    if (isNaN(firstWord) || !(secondWord === "recent" || secondWord === "current") || thirdWord !== "grades") {
+    if (words.length > 3 || isNaN(firstWord) || !(secondWord === "recent" || secondWord === "current") || thirdWord !== "grades") {
         twiml.message('Please send a messaging beginning with a student id number'
             + ' immediately followed by either "recent grades" or "current grades".'
             + ' For example:\n123456 recent grades');
+        res.writeHead(200, { 'Content-Type': 'text/xml' });
+        res.end(twiml.toString());
+        return;
     }
 
     let studentId = parseInt(firstWord);
