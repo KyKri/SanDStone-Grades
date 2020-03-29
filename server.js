@@ -38,7 +38,7 @@ app.post('/sms', (req, res) => {
     let whatsappId = req.body.From;
 
     // Make sure the whatsappId is not null or empty
-    if (whatsappId == null || whatsappId == undefined || whatsappId == "") {
+    if (whatsappId === null || whatsappId === undefined || whatsappId === "") {
         console.log("whatsappId is null, unable to check grades.");
         res.writeHead(400);
         res.write("Whatsapp ID is null. Whatsapp ID must be included to check grades.");
@@ -47,8 +47,6 @@ app.post('/sms', (req, res) => {
     }
 
     whatsappId = whatsappId.substring(9);
-
-    let authorized = false;
 
     isAuthorized(whatsappId, studentId).then((authorization) => {
         if (authorization.err) {
