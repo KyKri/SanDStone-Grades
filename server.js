@@ -62,6 +62,8 @@ app.post('/sms', (req, res) => {
     });
 });
 
+// Checks if the requesting Whatsapp id is authorized 
+// to check the grades of the specified student id
 async function isAuthorized(whatsappId, studentId) {
     console.log("Checking Authorizations for " + whatsappId);
 
@@ -100,6 +102,16 @@ async function isAuthorized(whatsappId, studentId) {
     } finally {
         return authorization;
     }
+}
+
+// Returns recent grades on assignments for the specified student id
+async function recentGrades(studentId) {
+
+}
+
+// Returns current class grades for the specified student id 
+async function currentGrades() {
+
 }
 
 var port = process.env.PORT || '3000';
