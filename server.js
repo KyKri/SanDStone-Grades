@@ -12,9 +12,10 @@ app.post('/sms', (req, res) => {
     console.log("Received post request to /sms.");
     const twiml = new MessagingResponse();
 
+    // Make sure that we got a message from Twilio
     if (req.body.Body === null || req.body.Body === undefined) {
         res.writeHead(400);
-        res.write("Body must include a message.");
+        res.write("Requests must include a message.");
         res.end();
         return;
     }
@@ -46,6 +47,7 @@ app.post('/sms', (req, res) => {
         return;
     }
 
+    // Strip off the first 9 characters, as Twilio sends prepends "whatsapp:" to the id
     whatsappId = whatsappId.substring(9);
 
     isAuthorized(whatsappId, studentId).then((authorization) => {
