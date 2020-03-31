@@ -47,7 +47,7 @@ app.post('/sms', (req, res) => {
         return;
     }
 
-    // Strip off the first 9 characters, as Twilio sends prepends "whatsapp:" to the id
+    // Strip off the first 9 characters, as Twilio prepends "whatsapp:" to the id
     whatsappId = whatsappId.substring(9);
 
     asyncMain(whatsappId, studentId, secondWord).then((message) => {
@@ -61,13 +61,16 @@ app.post('/sms', (req, res) => {
 async function asyncMain(whatsappId, studentId, secondWord) {
     let message = '';
 
+    // Check that the whatsappId is authorized to check grades for the provided studentId
     let authorization = await isAuthorized(whatsappId, studentId);
 
+    // Either something went wrong, or the whatsappId is not authorized
     if (authorization.auth === false || authorization.err === true) {
         message = authorization.msg;
         return message;
     }
 
+    // Depending on what was requested, check either recent or current grades
     if (secondWord === 'recent') {
         let grades = await recentGrades(studentId);
 
@@ -92,6 +95,7 @@ async function isAuthorized(whatsappId, studentId) {
         msg: "Either you are not authorized to check that student id or we do not have a student by that id."
     };
 
+    // Try connecting to the database
     try {
         var con = await mysql.createConnection(config.connection);
     } catch (err) {
@@ -101,6 +105,7 @@ async function isAuthorized(whatsappId, studentId) {
         return authorization;
     }
 
+    // Try querying the database to see if the whatsappId is authorized for the studentId
     try {
         const [rows, fields] = await con.execute(
             `SELECT whatsapp, student  
@@ -109,6 +114,7 @@ async function isAuthorized(whatsappId, studentId) {
             AND student = ${studentId};`
         );
         if (rows.length > 0) {
+            // The whatsappId is authorized
             if (rows[0].whatsapp === whatsappId && rows[0].student === studentId) {
                 authorization.auth = true;
                 authorization.msg = "You are authorized to check grades for student id " + studentId + ".\nChecking grades.";
@@ -130,6 +136,7 @@ async function recentGrades(studentId) {
         msg: 'It seems there are no recent grades for the student with id ' + studentId
     };
 
+    // Try connecting to the database
     try {
         var con = await mysql.createConnection(config.connection);
     } catch (err) {
@@ -138,6 +145,7 @@ async function recentGrades(studentId) {
         grades.msg("Sorry, we had some trouble on our end. Please try again later. Error #68.");
     }
 
+    // Try getting the recent grades for the studentId, if any
     try {
         const [rows, fields] = await con.execute(
             `SELECT assignments.name AS assignment, grades.points, assignments.maxpoints, subjects.name AS subject
@@ -149,6 +157,7 @@ async function recentGrades(studentId) {
             WHERE grades.student = ${studentId};`
         );
 
+        // If rows is greater than zero, then we have have some grades for the studentId
         if (rows.length > 0) {
             grades.msg = 'Recent grades for student with id ' + studentId + ' are:\n';
             for (let i = 0; i < rows.length; i++) {
