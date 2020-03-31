@@ -50,19 +50,36 @@ app.post('/sms', (req, res) => {
     // Strip off the first 9 characters, as Twilio sends prepends "whatsapp:" to the id
     whatsappId = whatsappId.substring(9);
 
-    isAuthorized(whatsappId, studentId).then((authorization) => {
-        if (authorization.err) {
-            twiml.message(authorization.msg);
-        } else if (authorization.auth === true) {
-            twiml.message(authorization.msg);
-        } else {
-            twiml.message(authorization.msg);
-        }
-
+    asyncMain(whatsappId, studentId, secondWord).then((message) => {
+        twiml.message(message);
         res.writeHead(200, { 'Content-Type': 'text/xml' });
         res.end(twiml.toString());
     });
 });
+
+// Async handler to call other async functions
+async function asyncMain(whatsappId, studentId, secondWord) {
+    let message = '';
+
+    let authorization = await isAuthorized(whatsappId, studentId);
+
+    if (authorization.auth === false || authorization.err === true) {
+        message = authorization.msg;
+        return message;
+    }
+
+    if (secondWord === 'recent') {
+        let grades = await recentGrades(studentId);
+
+        if (grades.err) {
+            message = grades.msg;
+            return message;
+        }
+
+        message = grades.msg;
+    }
+    return message;
+}
 
 // Checks if the requesting Whatsapp id is authorized 
 // to check the grades of the specified student id
@@ -108,7 +125,43 @@ async function isAuthorized(whatsappId, studentId) {
 
 // Returns recent grades on assignments for the specified student id
 async function recentGrades(studentId) {
+    var grades = {
+        err: false,
+        msg: 'It seems there are no recent grades for the student with id ' + studentId
+    };
 
+    try {
+        var con = await mysql.createConnection(config.connection);
+    } catch (err) {
+        console.log("Error connecting to DB:\n" + err);
+        grades.err = true;
+        grades.msg("Sorry, we had some trouble on our end. Please try again later. Error #68.");
+    }
+
+    try {
+        const [rows, fields] = await con.execute(
+            `SELECT assignments.name AS assignment, grades.points, assignments.maxpoints, subjects.name AS subject
+            FROM grades
+            JOIN assignments
+            ON grades.assignment = assignments.id
+            JOIN subjects
+            ON assignments.subject = subjects.id
+            WHERE grades.student = ${studentId};`
+        );
+
+        if (rows.length > 0) {
+            grades.msg = 'Recent grades for student with id ' + studentId + ' are:\n';
+            for (let i = 0; i < rows.length; i++) {
+                grades.msg += (rows[0].subject + ": " + rows[0].assignment + " - " + rows[0].points + "/" + rows[0].maxpoints + "\n");
+            }
+        }
+    } catch (err) {
+        console.log("Error querying DB:\n" + err);
+        grades.err = true;
+        grades.msg = "Sorry, we had some trouble on our end. Please try again later. Error #69."
+    } finally {
+        return grades;
+    }
 }
 
 // Returns current class grades for the specified student id 
